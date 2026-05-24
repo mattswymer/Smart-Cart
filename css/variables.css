@@ -1,0 +1,67 @@
+/* CSS Custom Properties & Design Tokens */
+
+:root {
+  /* Font Families */
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-display: 'Outfit', var(--font-sans);
+
+  /* Curated Harmonious HSL Color Palette (Premium Dark Mode) */
+  --bg-app: hsl(222, 47%, 7%);
+  --bg-sidebar: hsl(223, 40%, 10%);
+  --bg-card: hsla(223, 35%, 14%, 0.6);
+  --bg-card-hover: hsla(223, 35%, 18%, 0.85);
+  
+  --border-color: hsla(222, 30%, 25%, 0.4);
+  --border-glow: hsla(220, 95%, 60%, 0.15);
+  --border-glow-success: hsla(145, 80%, 50%, 0.2);
+
+  /* Text Colors */
+  --text-main: hsl(210, 40%, 96%);
+  --text-muted: hsl(215, 20%, 65%);
+  --text-dark: hsl(222, 47%, 7%);
+
+  /* Neon/Vibrant UI Accents */
+  --primary: hsl(217, 91%, 60%);        /* Electric Indigo */
+  --primary-hover: hsl(217, 91%, 68%);
+  --secondary: hsl(160, 84%, 39%);      /* Emerald/Mint Green */
+  --secondary-hover: hsl(160, 84%, 47%);
+  --accent: hsl(38, 92%, 50%);          /* Amber Gold for Deals */
+  --accent-hover: hsl(38, 92%, 58%);
+  
+  --danger: hsl(354, 70%, 54%);         /* Crimson Red */
+  --info: hsl(195, 85%, 45%);           /* Cyan Blue */
+
+  /* Deal-specific Badge Colors */
+  --badge-bogo: hsl(160, 80%, 45%);
+  --badge-coupon: hsl(280, 75%, 60%);
+  --badge-rollback: hsl(200, 90%, 50%);
+  --badge-circle: hsl(0, 80%, 55%);
+  --badge-aldi: hsl(35, 90%, 50%);
+  --badge-prime: hsl(25, 95%, 50%);
+  --badge-member: hsl(190, 80%, 45%);
+
+  /* Glassmorphism & Shadow Tokens */
+  --backdrop-blur: blur(14px);
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.15);
+  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.5);
+  --shadow-glow: 0 0 20px hsla(217, 91%, 60%, 0.15);
+  --shadow-glow-success: 0 0 25px hsla(160, 84%, 39%, 0.2);
+
+  /* Layout and Sizing */
+  --header-height: 76px;
+  --sidebar-width: 340px;
+  --max-width: 1440px;
+  
+  /* Border Radiuses */
+  --radius-xs: 4px;
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --radius-circle: 50%;
+
+  /* Micro-Animations & Transitions */
+  --transition-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-normal: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
