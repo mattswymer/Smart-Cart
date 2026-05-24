@@ -1578,3 +1578,55 @@ dialog::backdrop {
 .btn-remove-meal:hover {
   color: var(--danger);
 }
+
+/* Custom Leaflet Map Styling for Dark Mode */
+.leaflet-container {
+  background: var(--bg-sidebar) !important;
+  font-family: var(--font-sans) !important;
+}
+
+.leaflet-bar {
+  border: 1px solid var(--border-color) !important;
+  box-shadow: var(--shadow-sm) !important;
+}
+
+.leaflet-bar a {
+  background-color: var(--bg-card) !important;
+  color: var(--text-main) !important;
+  border-bottom: 1px solid var(--border-color) !important;
+}
+
+.leaflet-bar a:hover {
+  background-color: var(--bg-card-hover) !important;
+  color: var(--primary-hover) !important;
+}
+
+.leaflet-popup-content-wrapper, 
+.leaflet-popup-tip {
+  background: var(--bg-card) !important;
+  border: 1px solid var(--border-color) !important;
+  box-shadow: var(--shadow-lg) !important;
+  color: var(--text-main) !important;
+  backdrop-filter: var(--backdrop-blur);
+}
+
+.leaflet-popup-content {
+  margin: 10px 14px !important;
+  line-height: 1.4 !important;
+}
+
+.leaflet-popup-close-button {
+  color: var(--text-muted) !important;
+}
+
+.leaflet-popup-close-button:hover {
+  color: var(--danger) !important;
+}
+
+.user-location-marker {
+  transition: transform 0.2s ease-out;
+}
+
+.store-location-marker {
+  transition: transform 0.2s ease-out;
+}

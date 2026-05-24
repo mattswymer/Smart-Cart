@@ -8,6 +8,8 @@ export const STORES = [
     logo: 'W',
     baseMultiplier: 0.90,
     distanceMiles: 3.5,
+    latOffset: 0.021,
+    lonOffset: -0.032,
     slogan: 'Everyday Low Prices',
     description: 'Consistently the lowest baseline prices, but fewer specialty sales.',
     dealsStyle: 'Rollback'
@@ -19,6 +21,8 @@ export const STORES = [
     logo: 'K',
     baseMultiplier: 1.00,
     distanceMiles: 4.8,
+    latOffset: -0.035,
+    lonOffset: 0.024,
     slogan: 'Fresh Food, Low Prices',
     description: 'Great digital coupons and loyalty card discounts.',
     dealsStyle: 'Digital Coupon'
@@ -30,6 +34,8 @@ export const STORES = [
     logo: 'P',
     baseMultiplier: 1.15,
     distanceMiles: 2.2,
+    latOffset: 0.012,
+    lonOffset: 0.015,
     slogan: 'Where Shopping is a Pleasure',
     description: 'Excellent Buy-One-Get-One (BOGO) weekly deals, though regular prices are higher.',
     dealsStyle: 'BOGO Deal'
@@ -41,6 +47,8 @@ export const STORES = [
     logo: 'T',
     baseMultiplier: 1.05,
     distanceMiles: 5.2,
+    latOffset: 0.042,
+    lonOffset: -0.045,
     slogan: 'Expect More. Pay Less.',
     description: 'Good store brand items and Cartwheel savings circle deals.',
     dealsStyle: 'Target Circle'
@@ -52,6 +60,8 @@ export const STORES = [
     logo: 'A',
     baseMultiplier: 0.82,
     distanceMiles: 6.5,
+    latOffset: -0.048,
+    lonOffset: -0.025,
     slogan: 'Like Brands, Only Cheaper',
     description: 'Extremely cheap baseline prices on produce, meat, and private label pantry goods.',
     dealsStyle: 'Aldi Finds'
@@ -63,6 +73,8 @@ export const STORES = [
     logo: 'WF',
     baseMultiplier: 1.30,
     distanceMiles: 7.8,
+    latOffset: -0.025,
+    lonOffset: 0.048,
     slogan: 'Whole Foods, Whole People',
     description: 'Premium organic selection, with Amazon Prime member deals on select items.',
     dealsStyle: 'Prime Savings'
@@ -74,6 +86,8 @@ export const STORES = [
     logo: 'C',
     baseMultiplier: 0.78, // Very low unit cost
     distanceMiles: 14.5,
+    latOffset: 0.115,
+    lonOffset: -0.138,
     slogan: 'Savings in Bulk',
     description: 'Requires membership. Low unit price but requires bulk purchases and a longer drive.',
     dealsStyle: 'Member Only'

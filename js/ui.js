@@ -40,16 +40,13 @@ const recipeModalContent = document.getElementById('recipe-modal-content');
  * Initializes static UI elements (stores sidebar, popular tags, and tabs).
  */
 export function initStaticUI(callbacks) {
-  // 1. Render Store Checkboxes in Sidebar
-  renderStoreCheckboxes(callbacks.onStoreToggle);
-
-  // 2. Render Popular Staples tags
+  // 1. Render Popular Staples tags
   renderPopularTags(callbacks.onTagClick);
 
-  // 3. Setup autocomplete listeners
+  // 2. Setup autocomplete listeners
   setupAutocomplete(callbacks.onSuggestionClick);
 
-  // 4. Tab switching
+  // 3. Tab switching
   setupTabs();
 }
 
@@ -82,11 +79,10 @@ export function updateScraperStatus(isReady, dateString = '') {
 /**
  * Renders the store toggle checkbox cards in the sidebar.
  */
-function renderStoreCheckboxes(onToggle) {
+export function renderStoreCheckboxes(enabledStoreIds, onToggle) {
   storeCheckboxesContainer.innerHTML = '';
   STORES.forEach(store => {
-    // Default enabled state is true, except costco which is disabled by default
-    const isChecked = store.id !== 'costco';
+    const isChecked = enabledStoreIds.includes(store.id);
     
     const card = document.createElement('div');
     card.className = `store-checkbox-card ${isChecked ? 'checked' : ''}`;
@@ -891,5 +887,118 @@ export function renderPlannedRecipesTab(mealPlanRecipes, priceGrid, enabledStore
     });
 
     wrapper.appendChild(card);
+  });
+}
+
+/**
+ * Global Leaflet map and marker instances.
+ */
+let leafletMap = null;
+let userMarker = null;
+let storeMarkers = [];
+
+/**
+ * Updates the Location details display, including button state.
+ */
+export function renderLocationDetails(locationState) {
+  const labelAddress = document.getElementById('label-current-address');
+  const btnLocate = document.getElementById('btn-locate');
+  if (labelAddress) {
+    labelAddress.textContent = locationState.address || 'Atlanta, GA (30309)';
+  }
+  if (btnLocate) {
+    if (locationState.isLocating) {
+      btnLocate.disabled = true;
+      btnLocate.textContent = 'Locating...';
+    } else {
+      btnLocate.disabled = false;
+      btnLocate.textContent = 'Detect Live';
+    }
+  }
+}
+
+/**
+ * Initializes the Leaflet map and centers on user location coordinates.
+ */
+export function initLocationMap(userLat, userLon, stores) {
+  const mapContainer = document.getElementById('location-map');
+  if (!mapContainer) return;
+
+  if (typeof L === 'undefined') {
+    console.warn('Leaflet is not loaded yet.');
+    return;
+  }
+
+  if (leafletMap) {
+    leafletMap.setView([userLat, userLon], 11);
+    updateLocationMap(userLat, userLon, stores);
+    return;
+  }
+
+  leafletMap = L.map('location-map', {
+    zoomControl: false,
+    attributionControl: false
+  }).setView([userLat, userLon], 11);
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 18
+  }).addTo(leafletMap);
+
+  updateLocationMap(userLat, userLon, stores);
+}
+
+/**
+ * Redraws markers on the Leaflet map and centers it.
+ */
+export function updateLocationMap(userLat, userLon, stores) {
+  if (!leafletMap) {
+    initLocationMap(userLat, userLon, stores);
+    return;
+  }
+
+  leafletMap.setView([userLat, userLon], 11);
+
+  // Update user marker
+  const userIcon = L.divIcon({
+    className: 'user-location-marker',
+    html: `<div style="background-color: #0071dc; border: 2px solid white; width: 12px; height: 12px; border-radius: 50%; box-shadow: 0 0 8px rgba(0,113,220,0.6); position: relative;"></div>`,
+    iconSize: [12, 12],
+    iconAnchor: [6, 6]
+  });
+
+  if (userMarker) {
+    userMarker.setLatLng([userLat, userLon]);
+  } else {
+    userMarker = L.marker([userLat, userLon], { icon: userIcon }).addTo(leafletMap);
+    userMarker.bindPopup('<b style="color:#0071dc;">Your Location</b>');
+  }
+
+  // Remove existing store markers
+  storeMarkers.forEach(marker => leafletMap.removeLayer(marker));
+  storeMarkers = [];
+
+  // Add new store markers
+  stores.forEach(store => {
+    const storeLat = userLat + (store.latOffset || 0);
+    const storeLon = userLon + (store.lonOffset || 0);
+
+    const storeIcon = L.divIcon({
+      className: 'store-location-marker',
+      html: `<div style="background-color: ${store.color}; border: 1.5px solid white; width: 10px; height: 10px; border-radius: 50%; box-shadow: 0 0 6px rgba(0,0,0,0.5);"></div>`,
+      iconSize: [10, 10],
+      iconAnchor: [5, 5]
+    });
+
+    const marker = L.marker([storeLat, storeLon], { icon: storeIcon }).addTo(leafletMap);
+    marker.bindPopup(`
+      <div style="font-family: var(--font-sans); font-size: 0.8rem; line-height: 1.4; color: var(--text-main);">
+        <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
+          <span style="background-color: ${store.color}; color: white; border-radius: 4px; padding: 2px 6px; font-weight: bold; font-size: 0.75rem;">${store.logo}</span>
+          <strong style="color: ${store.color}; font-size: 0.85rem;">${store.name}</strong>
+        </div>
+        <div>📍 ${store.distanceMiles} miles (Round Trip)</div>
+      </div>
+    `);
+    storeMarkers.push(marker);
   });
 }

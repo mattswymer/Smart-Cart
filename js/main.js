@@ -3,7 +3,7 @@
 import { STORES, GROCERY_ITEMS, RECIPES } from './database.js';
 import { scrapeGroceryPrices } from './scraper.js';
 import { optimizeShoppingBasket, calculateStoreTravelCost } from './optimizer.js';
-import { initStaticUI, updateScraperStatus, renderBasket, renderRecipes, openRecipeModal, renderOptimizedList, resetScraperConsole, updateScraperProgress, addConsoleLog, renderLoyaltyCards, renderActiveMenu, renderPlannedRecipesTab } from './ui.js';
+import { initStaticUI, updateScraperStatus, renderBasket, renderRecipes, openRecipeModal, renderOptimizedList, resetScraperConsole, updateScraperProgress, addConsoleLog, renderLoyaltyCards, renderActiveMenu, renderPlannedRecipesTab, renderStoreCheckboxes, renderLocationDetails, updateLocationMap } from './ui.js';
 
 // Global Application State
 const state = {
@@ -29,7 +29,14 @@ const state = {
   },
   mealPlanRecipes: [],     // Selected recipes in active meal plan
   optimizedPlan: null,     // GBO Optimizer output
-  recipeFilter: 'All'      // Active recipe category filter
+  recipeFilter: 'All',     // Active recipe category filter
+  location: {
+    lat: 33.7756,            // Default Atlanta, GA coordinates
+    lon: -84.3853,
+    address: 'Atlanta, GA (30309)',
+    isLive: false,
+    isLocating: false
+  }
 };
 
 // DOM Elements
@@ -100,6 +107,17 @@ function loadStateFromStorage() {
       state.mealPlanRecipes = parsed.mealPlanRecipes || [];
       state.optimizedPlan = parsed.optimizedPlan || null;
       state.recipeFilter = parsed.recipeFilter || 'All';
+      
+      state.location = parsed.location || {
+        lat: 33.7756,
+        lon: -84.3853,
+        address: 'Atlanta, GA (30309)',
+        isLive: false,
+        isLocating: false
+      };
+      state.location.isLocating = false;
+      
+      recalculateStoreDistances(state.location.lat, state.location.lon);
     } catch (e) {
       console.error('Error parsing saved state', e);
       loadDefaultState();
@@ -121,6 +139,14 @@ function loadDefaultState() {
   state.travelSettings.loyaltyCards = {
     walmart: false, kroger: false, publix: false, target: false, aldi: false, wholefoods: false, costco: false
   };
+  state.location = {
+    lat: 33.7756,
+    lon: -84.3853,
+    address: 'Atlanta, GA (30309)',
+    isLive: false,
+    isLocating: false
+  };
+  recalculateStoreDistances(state.location.lat, state.location.lon);
 }
 
 /**
@@ -135,7 +161,13 @@ function saveStateToStorage() {
     travelSettings: state.travelSettings,
     mealPlanRecipes: state.mealPlanRecipes,
     optimizedPlan: state.optimizedPlan,
-    recipeFilter: state.recipeFilter
+    recipeFilter: state.recipeFilter,
+    location: {
+      lat: state.location.lat,
+      lon: state.location.lon,
+      address: state.location.address,
+      isLive: state.location.isLive
+    }
   };
   localStorage.setItem('smart_cart_state', JSON.stringify(dataToSave));
 }
@@ -144,21 +176,6 @@ function saveStateToStorage() {
  * Synchronizes DOM inputs with state.
  */
 function syncSettingsInputs() {
-  // Sync store checkboxes checked states
-  STORES.forEach(store => {
-    const cb = document.getElementById(`store-cb-${store.id}`);
-    const card = document.getElementById(`store-card-${store.id}`);
-    if (cb && card) {
-      const isEnabled = state.enabledStoreIds.includes(store.id);
-      cb.checked = isEnabled;
-      if (isEnabled) {
-        card.classList.add('checked');
-      } else {
-        card.classList.remove('checked');
-      }
-    }
-  });
-
   // Sync travel inputs
   toggleGasCalc.checked = state.travelSettings.useGasCalc;
   inputGasPrice.value = state.travelSettings.gasPrice;
@@ -193,6 +210,12 @@ function toggleSettingsVisibility() {
  * Binds main button clicks and inputs.
  */
 function bindEventHandlers() {
+  // Location detection
+  const btnLocate = document.getElementById('btn-locate');
+  if (btnLocate) {
+    btnLocate.addEventListener('click', detectLiveLocation);
+  }
+
   // Scraper Trigger buttons
   btnScrapeTrigger.addEventListener('click', runScraperWorkflow);
   
@@ -831,6 +854,13 @@ function refreshUI() {
   const isScraped = !!state.priceGrid;
   updateScraperStatus(isScraped, state.lastScrapeTime);
 
+  // Render location details & update/initialize map
+  renderLocationDetails(state.location);
+  updateLocationMap(state.location.lat, state.location.lon, STORES);
+
+  // Render store preferences (checkboxes list) in sidebar
+  renderStoreCheckboxes(state.enabledStoreIds, handleStoreToggle);
+
   // Render basket sidebar list
   renderBasket(state.basket, {
     onUpdateQty: handleUpdateBasketQty
@@ -908,4 +938,105 @@ function handleLoyaltyToggle(storeId, isLinked) {
   state.travelSettings.loyaltyCards[storeId] = isLinked;
   saveStateToStorage();
   recalculateOptimizer();
+}
+
+/**
+ * Triggers geolocation search and reverse-geocodes the coordinates using Nominatim.
+ */
+function detectLiveLocation() {
+  if (!navigator.geolocation) {
+    alert('Geolocation is not supported by your browser.');
+    return;
+  }
+
+  state.location.isLocating = true;
+  renderLocationDetails(state.location);
+
+  navigator.geolocation.getCurrentPosition(
+    async (position) => {
+      const lat = position.coords.latitude;
+      const lon = position.coords.longitude;
+
+      state.location.lat = lat;
+      state.location.lon = lon;
+      state.location.isLive = true;
+
+      try {
+        const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&addressdetails=1`);
+        if (response.ok) {
+          const data = await response.json();
+          const address = data.address || {};
+          const city = address.city || address.town || address.village || address.suburb || '';
+          const stateName = address.state || '';
+          const postcode = address.postcode || '';
+          
+          let addressString = '';
+          if (city && stateName) {
+            addressString = `${city}, ${stateName}`;
+            if (postcode) {
+              addressString += ` (${postcode})`;
+            }
+          } else {
+            addressString = data.display_name ? data.display_name.split(',').slice(0, 2).join(',').trim() : `${lat.toFixed(4)}, ${lon.toFixed(4)}`;
+          }
+          state.location.address = addressString;
+        } else {
+          state.location.address = `Coordinates: ${lat.toFixed(4)}, ${lon.toFixed(4)}`;
+        }
+      } catch (err) {
+        console.error('Error reverse geocoding:', err);
+        state.location.address = `Coordinates: ${lat.toFixed(4)}, ${lon.toFixed(4)}`;
+      }
+
+      state.location.isLocating = false;
+      
+      // Update store distances
+      recalculateStoreDistances(lat, lon);
+      
+      // Save state
+      saveStateToStorage();
+      
+      // Refresh UI, re-run GBO optimizer
+      refreshUI();
+      recalculateOptimizer();
+    },
+    (error) => {
+      console.error('Geolocation error:', error);
+      let errMsg = 'Failed to retrieve your location.';
+      if (error.code === error.PERMISSION_DENIED) {
+        errMsg = 'Location permission denied. Please enable location sharing in your browser settings.';
+      } else if (error.code === error.POSITION_UNAVAILABLE) {
+        errMsg = 'Location info is unavailable.';
+      } else if (error.code === error.TIMEOUT) {
+        errMsg = 'Location request timed out.';
+      }
+      alert(errMsg);
+      state.location.isLocating = false;
+      renderLocationDetails(state.location);
+    },
+    { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+  );
+}
+
+/**
+ * Calculates store distances using the Haversine formula based on coordinate offsets.
+ */
+function recalculateStoreDistances(userLat, userLon) {
+  const R = 3958.8; // Radius of Earth in miles
+  
+  STORES.forEach(store => {
+    const storeLat = userLat + (store.latOffset || 0);
+    const storeLon = userLon + (store.lonOffset || 0);
+
+    const dLat = (storeLat - userLat) * Math.PI / 180;
+    const dLon = (storeLon - userLon) * Math.PI / 180;
+    const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+              Math.cos(userLat * Math.PI / 180) * Math.cos(storeLat * Math.PI / 180) *
+              Math.sin(dLon/2) * Math.sin(dLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    const oneWayDistance = R * c;
+
+    // Double the distance for round trip as used in GBO travel surcharge calculations
+    store.distanceMiles = parseFloat((2 * oneWayDistance).toFixed(1));
+  });
 }
